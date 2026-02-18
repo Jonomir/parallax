@@ -1,0 +1,28 @@
+name: Parallax
+options:
+  bundleIdPrefix: com.parallax
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+
+targets:
+  Parallax:
+    type: application
+    platform: macOS
+    sources: [Parallax]
+    settings:
+      base:
+        INFOPLIST_FILE: Parallax/Resources/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.parallax.app
+        PRODUCT_NAME: Parallax
+        GENERATE_INFOPLIST_FILE: false
+
+  ParallaxTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources: [ParallaxTests]
+    dependencies:
+      - target: Parallax
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: true
