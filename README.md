@@ -48,16 +48,38 @@ Download the latest app bundle from GitHub Releases, unzip, and launch `Parallax
 
 Note: release artifacts are currently unsigned. On first launch, macOS may require approval in Privacy & Security.
 
-## Build from source
+## Build from source (CLI)
 
 Prerequisites:
 
 - Xcode
+- Xcode command line tools
 - XcodeGen (`brew install xcodegen`)
+
+From a fresh clone:
 
 ```bash
 xcodegen generate
-open Parallax.xcodeproj
+```
+
+Debug build + run:
+
+```bash
+xcodebuild -project Parallax.xcodeproj -scheme Parallax -configuration Debug -derivedDataPath build/DerivedData build
+open build/DerivedData/Build/Products/Debug/Parallax.app
+```
+
+Release build + run:
+
+```bash
+xcodebuild -project Parallax.xcodeproj -scheme Parallax -configuration Release -derivedDataPath build/DerivedData clean build
+open build/DerivedData/Build/Products/Release/Parallax.app
+```
+
+Regenerate app icons (optional):
+
+```bash
+swift scripts/generate_app_icon.swift Parallax/Resources/Assets.xcassets/AppIcon.appiconset
 ```
 
 `project.yml` is the source of truth for project generation.

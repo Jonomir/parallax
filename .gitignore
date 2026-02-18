@@ -4,6 +4,7 @@
 xcuserdata/
 DerivedData/
 build/
+*.profraw
 *.moved-aside
 *.pbxuser
 !default.pbxuser
