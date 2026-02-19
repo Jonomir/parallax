@@ -91,12 +91,10 @@ actor WorkspaceManager {
     }
 
     private func validateWorkspacePath(_ workspaceURL: URL) throws {
-        let base = baseURL.standardizedFileURL.resolvingSymlinksInPath()
-        let target = workspaceURL.standardizedFileURL.resolvingSymlinksInPath()
-        let basePrefix = base.path.hasSuffix("/") ? base.path : base.path + "/"
-
-        guard target.path.hasPrefix(basePrefix) else {
-            throw WorkspacePathError.outsideWorkspaceRoot(target.path)
+        guard PathContainment.isDescendant(workspaceURL, of: baseURL) else {
+            throw WorkspacePathError.outsideWorkspaceRoot(
+                PathContainment.canonicalPath(workspaceURL)
+            )
         }
     }
 
