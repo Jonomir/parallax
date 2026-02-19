@@ -16,9 +16,10 @@ struct ShellExecutor {
         process.standardError = pipe
 
         try process.run()
-        process.waitUntilExit()
 
+        // Drain output before waiting to avoid blocking if the child writes a lot.
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
         let output = String(data: data, encoding: .utf8) ?? ""
 
         guard process.terminationStatus == 0 else {

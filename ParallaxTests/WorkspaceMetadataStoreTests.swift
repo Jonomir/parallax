@@ -59,4 +59,41 @@ final class WorkspaceMetadataStoreTests: XCTestCase {
         XCTAssertEqual(loaded.count, 1)
         XCTAssertEqual(loaded[workspacePath], metadata)
     }
+
+    func testLoadCanonicalizesLegacyPaths() async throws {
+        let fileURL = tempDirectory.appendingPathComponent("workspaces.json")
+        let store = WorkspaceMetadataStore(fileURL: fileURL)
+
+        let realWorkspaceRoot = tempDirectory.appendingPathComponent("real", isDirectory: true)
+        let aliasWorkspaceRoot = tempDirectory.appendingPathComponent("alias", isDirectory: true)
+        try FileManager.default.createDirectory(at: realWorkspaceRoot, withIntermediateDirectories: true)
+        try FileManager.default.createSymbolicLink(
+            at: aliasWorkspaceRoot,
+            withDestinationURL: realWorkspaceRoot
+        )
+
+        let workspaceAlias = aliasWorkspaceRoot.appendingPathComponent("repo__task", isDirectory: true)
+        let sourceAlias = aliasWorkspaceRoot.appendingPathComponent("source-repo", isDirectory: true)
+        try FileManager.default.createDirectory(at: workspaceAlias, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: sourceAlias, withIntermediateDirectories: true)
+
+        let raw = WorkspaceMetadataFile(workspaces: [
+            workspaceAlias.path: WorkspaceMetadata(
+                workspacePath: workspaceAlias.path,
+                sourceRepoPath: sourceAlias.path,
+                branchName: "agent/task",
+                createdAt: Date(timeIntervalSince1970: 0)
+            )
+        ])
+        let data = try JSONEncoder().encode(raw)
+        try data.write(to: fileURL, options: .atomic)
+
+        let loaded = await store.load()
+        let canonicalWorkspacePath = store.normalizedPath(workspaceAlias.path)
+        let metadata = try XCTUnwrap(loaded[canonicalWorkspacePath])
+
+        XCTAssertEqual(metadata.workspacePath, canonicalWorkspacePath)
+        XCTAssertEqual(metadata.sourceRepoPath, store.normalizedPath(sourceAlias.path))
+        XCTAssertEqual(loaded.count, 1)
+    }
 }

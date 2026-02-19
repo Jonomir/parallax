@@ -1,26 +1,49 @@
 import Foundation
+import AppKit
 
 enum EditorLaunchError: LocalizedError {
-    case launchFailed(editor: String, path: String, underlying: Error)
+    case unsupportedEditor(String)
+    case openFailed(editor: String, appName: String, path: String)
 
     var errorDescription: String? {
         switch self {
-        case .launchFailed(let editor, let path, let underlying):
-            return "Could not launch '\(editor)' for '\(path)': \(underlying.localizedDescription)"
+        case .unsupportedEditor(let editor):
+            return "Unsupported editor '\(editor)'."
+        case .openFailed(let editor, let appName, let path):
+            return "Could not open '\(path)' in '\(editor)' (\(appName)). Ensure the app is installed."
         }
     }
 }
 
 enum EditorLauncher {
     static func open(path: String, editor: String = Constants.defaultEditor) throws {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        process.arguments = [editor, path]
+        let normalizedEditor = editor.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard let appName = applicationName(for: normalizedEditor) else {
+            throw EditorLaunchError.unsupportedEditor(editor)
+        }
 
-        do {
-            try process.run()
-        } catch {
-            throw EditorLaunchError.launchFailed(editor: editor, path: path, underlying: error)
+        let opened = NSWorkspace.shared.openFile(path, withApplication: appName)
+        guard opened else {
+            throw EditorLaunchError.openFailed(
+                editor: editor,
+                appName: appName,
+                path: path
+            )
+        }
+    }
+
+    static func applicationName(for editor: String) -> String? {
+        switch editor {
+        case "zed":
+            return "Zed"
+        case "cursor":
+            return "Cursor"
+        case "code":
+            return "Visual Studio Code"
+        case "goland":
+            return "GoLand"
+        default:
+            return nil
         }
     }
 }

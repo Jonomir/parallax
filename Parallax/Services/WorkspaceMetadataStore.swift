@@ -65,7 +65,7 @@ actor WorkspaceMetadataStore {
     }
 
     nonisolated func normalizedPath(_ path: String) -> String {
-        URL(fileURLWithPath: path).standardizedFileURL.path
+        PathContainment.canonicalPath(URL(fileURLWithPath: path))
     }
 
     private func readFromDisk() throws -> [String: WorkspaceMetadata] {
@@ -82,7 +82,17 @@ actor WorkspaceMetadataStore {
 
         do {
             let decoded = try JSONDecoder().decode(WorkspaceMetadataFile.self, from: data)
-            return decoded.workspaces
+            var normalized: [String: WorkspaceMetadata] = [:]
+            for metadata in decoded.workspaces.values {
+                let workspacePath = normalizedPath(metadata.workspacePath)
+                normalized[workspacePath] = WorkspaceMetadata(
+                    workspacePath: workspacePath,
+                    sourceRepoPath: normalizedPath(metadata.sourceRepoPath),
+                    branchName: metadata.branchName,
+                    createdAt: metadata.createdAt
+                )
+            }
+            return normalized
         } catch {
             throw WorkspaceMetadataStoreError.decodeFailed(error)
         }
